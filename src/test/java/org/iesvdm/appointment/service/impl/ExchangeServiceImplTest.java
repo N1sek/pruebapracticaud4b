@@ -1,9 +1,6 @@
 package org.iesvdm.appointment.service.impl;
 
-import net.bytebuddy.asm.Advice;
-import org.iesvdm.appointment.entity.Appointment;
-import org.iesvdm.appointment.entity.AppointmentStatus;
-import org.iesvdm.appointment.entity.Customer;
+import org.iesvdm.appointment.entity.*;
 import org.iesvdm.appointment.repository.AppointmentRepository;
 import org.iesvdm.appointment.repository.ExchangeRequestRepository;
 import org.iesvdm.appointment.repository.impl.AppointmentRepositoryImpl;
@@ -15,6 +12,8 @@ import org.mockito.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExchangeServiceImplTest {
 
@@ -81,6 +80,16 @@ public class ExchangeServiceImplTest {
      */
     @Test
     void checkIfEligibleForExchange() {
+        // Este falla todo el rato me devuelve appointment is null
+        Appointment appointment1 = new Appointment();
+        appointment1.setId(1);
+        appointment1.setStart(LocalDateTime.now().plusDays(1));
+        appointment1.setStatus(AppointmentStatus.SCHEDULED);
+        appointment1.setCustomer(customer1);
+
+        Mockito.when(appointmentRepository.getOne(1)).thenReturn(appointment1);
+
+        assertTrue(exchangeService.checkIfEligibleForExchange(1, 3));
 
     }
 
@@ -96,6 +105,16 @@ public class ExchangeServiceImplTest {
      */
     @Test
     void getEligibleAppointmentsForExchangeTest() {
+//        Appointment appointment1 = new Appointment();
+//        appointment1.setId(1);
+//        appointment1.setStart(LocalDateTime.now());
+//
+//        Appointment appointment2 = new Appointment();
+//        appointment2.setId(2);
+//        appointment2.setStart(appointment1.getStart().plusDays(1));
+//
+//        appointmentRepository.save(appointment1);
+//        appointmentRepository.save(appointment2);
 
     }
 
@@ -106,7 +125,25 @@ public class ExchangeServiceImplTest {
      */
     @Test
     void checkIfExchangeIsPossibleTest() {
+        Customer customer = new Customer();
+        customer.setId(3);
 
+        Appointment appointment = new Appointment();
+        appointment.setId(1);
+        appointment.setCustomer(customer);
+
+        Mockito.when(appointmentRepository.getOne(1)).thenReturn(appointment);
+        Exception exception = null;
+        try {
+            exchangeService.checkIfExchangeIsPossible(1, 1, 2);
+        } catch (RuntimeException e) {
+            exception = e;
+        }
+
+        String expectedMessage = "Unauthorized";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
     /**
@@ -118,8 +155,20 @@ public class ExchangeServiceImplTest {
      * rechazado (REJECTED).
      * Verfifica se invoca al método con el exchangeRequest del stub.
      */
-     void rejectExchangeTest() {
+    @Test
+    void rejectExchangeTest() {
+        ExchangeRequest exchangeRequestStub = new ExchangeRequest();
+        exchangeRequestStub.setRequestor(new Appointment());
+        Mockito.when(exchangeRequestRepository.getOne(1)).thenReturn(exchangeRequestStub);
 
-     }
+        exchangeService.rejectExchange(1);
+
+        ArgumentCaptor<ExchangeRequest> captor = ArgumentCaptor.forClass(ExchangeRequest.class);
+        Mockito.verify(exchangeRequestRepository).save(captor.capture());
+
+        assertEquals(ExchangeStatus.REJECTED, captor.getValue().getStatus());
+
+        Mockito.verify(exchangeRequestRepository).getOne(1);
+    }
 
 }
