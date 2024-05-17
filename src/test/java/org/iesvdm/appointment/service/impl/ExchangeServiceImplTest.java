@@ -104,19 +104,33 @@ public class ExchangeServiceImplTest {
      * con el appointmentId pasado a capturar mediante el captor de id
      */
     @Test
-    void getEligibleAppointmentsForExchangeTest() {
-//        Appointment appointment1 = new Appointment();
-//        appointment1.setId(1);
-//        appointment1.setStart(LocalDateTime.now());
-//
-//        Appointment appointment2 = new Appointment();
-//        appointment2.setId(2);
-//        appointment2.setStart(appointment1.getStart().plusDays(1));
-//
-//        appointmentRepository.save(appointment1);
-//        appointmentRepository.save(appointment2);
-
-    }
+        void getEligibleAppointmentsForExchangeTest() {
+    
+            Appointment appointment1 = new Appointment();
+            appointment1.setId(1);
+            appointment1.setStart(LocalDateTime.now().plusDays(1));
+            appointment1.setStatus(AppointmentStatus.SCHEDULED);
+            appointment1.setCustomer(customer1);
+    
+            Appointment appointment2 = new Appointment();
+            appointment2.setId(2);
+            appointment2.setStart(LocalDateTime.now().plusDays(2));
+            appointment2.setStatus(AppointmentStatus.SCHEDULED);
+            appointment2.setCustomer(customer2);
+    
+            Mockito.when(appointmentRepository.getOne(1)).thenReturn(appointment1);
+            Mockito.when(appointmentRepository.getOne(2)).thenReturn(appointment2);
+    
+            exchangeService.getEligibleAppointmentsForExchange(1);
+    
+            Mockito.verify(appointmentRepository).getOne(appointmentIdCaptor.capture());
+            assertEquals(1, appointmentIdCaptor.getValue());
+    
+            // Falla
+            Mockito.verify(appointmentRepository).getOne(appointmentIdCaptor.capture());
+            assertEquals(2, appointmentIdCaptor.getValue());
+    
+        }
 
     /**
      * Realiza una prueba que mediante stubs apropiados demuestre
